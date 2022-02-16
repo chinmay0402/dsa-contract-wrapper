@@ -3,6 +3,7 @@ require('hardhat');
 const DSA = require('dsa-connect');
 const { parseEther } = require("ethers/lib/utils");
 require("@nomiclabs/hardhat-web3");
+const dsaContractAbi = require("./dsaContractAbi.js");
 
 describe("DSA Wrapper Contract", function () {
   let owner;
@@ -26,15 +27,26 @@ describe("DSA Wrapper Contract", function () {
     const accounts = await dsa.getAccounts(address);
     console.log(accounts)
     dsaAddress = accounts[0].address;
-    dsaId = accounts[0].id;
-  })
+    
+    dsaContract = new ethers.Contract(dsaAddress, dsaContractAbi, ethers.provider);
 
-  beforeEach(async () => {
+    dsaId = accounts[0].id;
+
     const dsaWrapperFactory = await ethers.getContractFactory("DsaWrapper");
     [owner] = await ethers.getSigners();
     dsaWrapper = await dsaWrapperFactory.deploy();
 
     await dsa.setInstance(dsaId);
+
+    let spells = dsa.Spell();
+    spells.add({
+      connector: "AUTHORITY-A",
+      method: "add",
+      args: [dsaWrapper.address]
+    });
+    const transactionHash = await spells.cast({
+      gasPrice: web3.utils.toWei('1000000', 'gwei'), // in gwei, used in node implementation.
+    });
   });
 
   describe('Deployment', async () => {
@@ -45,16 +57,16 @@ describe("DSA Wrapper Contract", function () {
 
   describe('Authority', async () => {
     it('should return correct account authority', async () => {
-      expect(await dsaWrapper.getAuthority(dsaId)).to.have.all.members([owner.address]);
+      expect(await dsaWrapper.getAuthority(dsaId)).to.have.all.members([owner.address, dsaWrapper.address]);
     });
   });
 
   describe('Deposit Ether', async () => {
-    it('Should deposit Ether to DSA', async () => {
+    it('Should deposit Ether to DSA and update balances', async () => {
       expect(await dsaWrapper.depositEtherToDsa(dsaId, {
         value: parseEther('1')
       }))
-        .to.changeEtherBalances([owner], [parseEther('-1')]);
+        .to.changeEtherBalances([owner, dsaContract], [parseEther('-1'), parseEther('1')]);
     });
   });
 });
