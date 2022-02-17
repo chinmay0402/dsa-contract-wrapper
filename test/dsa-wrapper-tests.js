@@ -69,4 +69,26 @@ describe("DSA Wrapper Contract", function () {
         .to.changeEtherBalances([owner, dsaContract], [parseEther('-1'), parseEther('1')]);
     });
   });
+
+  describe('Withdraw Ether', async () => {
+    it('Should withdraw Ether from DSA and update balances (1)', async () => {
+      expect(await dsaWrapper.withdrawEther(dsaId, parseEther('0.6')))
+        .to.changeEtherBalances([owner, dsaContract], [parseEther('0.6'), parseEther('-0.6')]);
+    });
+
+    it('Should withdraw Ether from DSA and update balances (2)', async () => {
+      expect(await dsaWrapper.withdrawEther(dsaId, parseEther('0.4')))
+        .to.changeEtherBalances([owner, dsaContract], [parseEther('0.4'), parseEther('-0.4')]);
+    });
+  });
+
+  describe('Authority', async () => {
+    it('Should add authority', async () => {
+      
+    });
+
+    it('Should remove authority', async () => {
+
+    });
+  });
 });

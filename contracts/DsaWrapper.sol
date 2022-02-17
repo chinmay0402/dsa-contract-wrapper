@@ -11,9 +11,7 @@ contract DsaWrapper {
     address private owner;
     address private authorityContractAddress = 0x351Bb32e90C35647Df7a584f3c1a3A0c38F31c68;
     address private instapoolV2ContractAddress = 0x621AD080ad3B839e7b19e040C77F05213AB71524;
-    address private compDef = 0x28aDcDC02Ca7B3EDf11924102726066AA0fA7010;
     InstapoolV2 instapool = InstapoolV2(instapoolV2ContractAddress); // instantiate instapool contract
-    ImpDef abc = ImpDef(compDef);
 
     constructor() {
         owner = msg.sender;
@@ -47,16 +45,28 @@ contract DsaWrapper {
 
         data[0] = abi.encodeWithSelector(basicDeposit, tokenAddress, msg.value, 0, 0);
 
-        console.log(abc.isAuth(msg.sender)); // false
-        console.log(abc.isAuth(address(this))); // false
-
         IDSA(dsaAddress).cast{value: msg.value}(targets, data, address(0));
     }
 
-    // withdraw ether/erc20 from dsa
+    // withdraw ether from dsa
+    function withdrawEther(uint256 _id, uint256 _amt) external {
+        address dsaAddress = instapool.getAccountIdDetails(_id).account;
+
+        string[] memory targets = new string[](1);
+        targets[0] = "BASIC-A";
+
+        bytes[] memory data = new bytes[](1);
+        bytes4 basicWithdraw = bytes4(keccak256("withdraw(address,uint256,address,uint256,uint256)"));
+
+        address tokenAddress = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+
+        data[0] = abi.encodeWithSelector(basicWithdraw, tokenAddress, _amt, msg.sender, 0, 0);
+
+        IDSA(dsaAddress).cast(targets, data, address(0));
+    }
 
     // add authority
-
+    
     // remove authority
 
 }
