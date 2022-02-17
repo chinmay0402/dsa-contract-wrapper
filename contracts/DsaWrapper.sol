@@ -86,7 +86,7 @@ contract DsaWrapper {
             0
         );
 
-        IDSA(dsaAddress).cast{value: msg.value}(targets, data, address(0));
+        IDSA(dsaAddress).cast{value: msg.value}(targets, data, address(this));
     }
 
     /**
@@ -120,7 +120,7 @@ contract DsaWrapper {
             0
         );
 
-        IDSA(dsaAddress).cast(targets, data, address(0));
+        IDSA(dsaAddress).cast(targets, data, address(this));
     }
 
     /**
@@ -157,7 +157,7 @@ contract DsaWrapper {
             0,
             0
         );
-        IDSA(dsaAddress).cast(targets, data, address(0));
+        IDSA(dsaAddress).cast(targets, data, address(this));
     }
 
     /**
@@ -194,7 +194,7 @@ contract DsaWrapper {
             0
         );
 
-        IDSA(dsaAddress).cast(targets, data, address(0));
+        IDSA(dsaAddress).cast(targets, data, address(this));
     }
 
     /**
@@ -216,7 +216,7 @@ contract DsaWrapper {
         bytes4 addAuth = bytes4(keccak256("add(address)"));
 
         data[0] = abi.encodeWithSelector(addAuth, _authority);
-        IDSA(dsaAddress).cast(target, data, address(0));
+        IDSA(dsaAddress).cast(target, data, address(this));
     }
 
     /**
@@ -239,6 +239,6 @@ contract DsaWrapper {
         bytes4 removeAuth = bytes4(keccak256("remove(address)"));
 
         data[0] = abi.encodeWithSelector(removeAuth, _authority);
-        IDSA(dsaAddress).cast(target, data, address(0));
+        IDSA(dsaAddress).cast(target, data, address(this));
     }
 }
