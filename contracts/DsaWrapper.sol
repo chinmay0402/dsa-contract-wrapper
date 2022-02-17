@@ -61,7 +61,7 @@ contract DsaWrapper {
      * @param _id id of DSA account
      */
     function depositEther(uint256 _id)
-        external
+        public
         payable
         onlyAuthority(_id, msg.sender)
     {
@@ -95,7 +95,7 @@ contract DsaWrapper {
      * @param _amt amount of ETH to withdraw
      */
     function withdrawEther(uint256 _id, uint256 _amt)
-        external
+        public
         onlyAuthority(_id, msg.sender)
     {
         address dsaAddress = instapool.getAccountIdDetails(_id).account;
@@ -133,7 +133,7 @@ contract DsaWrapper {
         uint256 _id,
         uint256 _amt,
         address _tokenAddress
-    ) external onlyAuthority(_id, msg.sender) {
+    ) public onlyAuthority(_id, msg.sender) {
         IERC20 token = IERC20(_tokenAddress);
 
         // get dsa-address
@@ -170,7 +170,7 @@ contract DsaWrapper {
         uint256 _id,
         uint256 _amt,
         address _tokenAddress
-    ) external onlyAuthority(_id, msg.sender) {
+    ) public onlyAuthority(_id, msg.sender) {
         IERC20 token = IERC20(_tokenAddress);
         
         address dsaAddress = instapool.getAccountIdDetails(_id).account;
@@ -203,7 +203,7 @@ contract DsaWrapper {
      * @param _authority address of account to be added as authority to DSA
      */
     function addAuthority(uint256 _id, address _authority)
-        external
+        public
         onlyAuthority(_id, msg.sender)
     {
         require(_authority != address(0), "INVALID ADDRESS");
@@ -225,7 +225,7 @@ contract DsaWrapper {
      * @param _authority address of account to be removed from authorities to DSA
      */
     function removeAuthority(uint256 _id, address _authority)
-        external
+        public
         onlyAuthority(_id, msg.sender)
     {
         require(_authority != address(0), "INVALID ADDRESS");
