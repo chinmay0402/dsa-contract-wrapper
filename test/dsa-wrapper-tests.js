@@ -57,7 +57,7 @@ describe("DSA Wrapper Contract", function () {
 
   describe('Get Authority', async () => {
     it('should return correct account authority', async () => {
-      await expect(await dsaWrapper.getAuthority(dsaId)).to.have.all.members([owner.address, dsaWrapper.address]);
+      await expect(await dsaWrapper.getAuthority(dsaId)).to.have.same.members([owner.address, dsaWrapper.address]);
     });
   });
 
@@ -108,23 +108,29 @@ describe("DSA Wrapper Contract", function () {
   describe('Modify Authority', async () => {
     it('Should add authority', async () => {
       await dsaWrapper.addAuthority(dsaId, addr1.address);
-      await expect(await dsaWrapper.getAuthority(dsaId)).to.have.all.members([owner.address, dsaWrapper.address, addr1.address]);
+      await expect(await dsaWrapper.getAuthority(dsaId)).to.have.same.members([owner.address, dsaWrapper.address, addr1.address]);
     });
 
     it('Should remove authority', async () => {
       // to confirm if addr1 is still auth
-      await expect(await dsaWrapper.getAuthority(dsaId)).to.have.all.members([owner.address, dsaWrapper.address, addr1.address]);
+      await expect(await dsaWrapper.getAuthority(dsaId)).to.have.same.members([owner.address, dsaWrapper.address, addr1.address]);
 
       // remove addr1 from auth
       await dsaWrapper.removeAuthority(dsaId, addr1.address);
 
       // check if remove was successful
-      await expect(await dsaWrapper.getAuthority(dsaId)).to.have.all.members([owner.address, dsaWrapper.address]);
+      await expect(await dsaWrapper.getAuthority(dsaId)).to.have.same.members([owner.address, dsaWrapper.address]);
     });
 
     it('Should fail on attempting to modify authority with non-authority account', async () => {
       await expect(dsaWrapper.connect(addr2).addAuthority(dsaId, addr1.address))
         .to.be.revertedWith("PERMISSION DENIED: NO AUTHORITY");
+    });
+
+    it('Should fail on attempting to remove all authorities', async () => {
+      await dsaWrapper.removeAuthority(dsaId, dsaWrapper.address);
+      await expect(dsaWrapper.removeAuthority(dsaId, owner.address))
+        .to.be.revertedWith("CANNOT REMOVE ALL AUTHORITIES");
     })
   });
 });

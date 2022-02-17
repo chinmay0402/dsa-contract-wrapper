@@ -133,7 +133,7 @@ contract DsaWrapper {
         uint256 _id,
         uint256 _amt,
         address _tokenAddress
-    ) external payable onlyAuthority(_id, msg.sender) {
+    ) external onlyAuthority(_id, msg.sender) {
         IERC20 token = IERC20(_tokenAddress);
 
         // get dsa-address
@@ -229,6 +229,10 @@ contract DsaWrapper {
         onlyAuthority(_id, msg.sender)
     {
         require(_authority != address(0), "INVALID ADDRESS");
+        
+        address[] memory authorities = getAuthority(_id);
+
+        require(authorities.length > 1, "CANNOT REMOVE ALL AUTHORITIES");
 
         address dsaAddress = instapool.getAccountIdDetails(_id).account;
 
