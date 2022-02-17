@@ -24,11 +24,7 @@ contract DsaWrapper {
         return owner;
     }
 
-    function getAuthority(uint256 _id)
-        external
-        view
-        returns (address[] memory)
-    {
+    function getAuthority(uint256 _id) public view returns (address[] memory) {
         // get dsa-address from id
         address dsaAddress = instapool.getAccountIdDetails(_id).account;
 
@@ -39,8 +35,25 @@ contract DsaWrapper {
         return accountAuthorities;
     }
 
-    // deposit ether to dsa
-    function depositEther(uint256 _id) external payable {
+    modifier onlyAuthority(uint256 _id, address _user) {
+        address[] memory authorities = getAuthority(_id);
+
+        bool isAuthority = false;
+        for (uint256 i = 0; i < authorities.length; i++) {
+            if (authorities[i] == _user) {
+                isAuthority = true;
+                break;
+            }
+        }
+        require(isAuthority, "PERMISSION DENIED: NO AUTHORITY");
+        _;
+    }
+
+    function depositEther(uint256 _id)
+        external
+        payable
+        onlyAuthority(_id, msg.sender)
+    {
         // get dsa-address
         address dsaAddress = instapool.getAccountIdDetails(_id).account;
 
@@ -65,9 +78,12 @@ contract DsaWrapper {
         IDSA(dsaAddress).cast{value: msg.value}(targets, data, address(0));
     }
 
-    // withdraw ether from dsa
-    function withdrawEther(uint256 _id, uint256 _amt) external {
+    function withdrawEther(uint256 _id, uint256 _amt)
+        external
+        onlyAuthority(_id, msg.sender)
+    {
         address dsaAddress = instapool.getAccountIdDetails(_id).account;
+        require(dsaAddress.balance >= _amt, "INSUFFICIENT FUNDS");
 
         string[] memory targets = new string[](1);
         targets[0] = "BASIC-A";
@@ -95,7 +111,7 @@ contract DsaWrapper {
         uint256 _id,
         uint256 _amt,
         address _tokenAddress
-    ) external payable {
+    ) external payable onlyAuthority(_id, msg.sender) {
         IERC20 token = IERC20(_tokenAddress);
 
         // get dsa-address
@@ -122,9 +138,16 @@ contract DsaWrapper {
         IDSA(dsaAddress).cast(targets, data, address(0));
     }
 
-    // withdraw ether from dsa
-    function withdrawErc20(uint256 _id, uint256 _amt, address _tokenAddress) external {
+    function withdrawErc20(
+        uint256 _id,
+        uint256 _amt,
+        address _tokenAddress
+    ) external onlyAuthority(_id, msg.sender) {
+        IERC20 token = IERC20(_tokenAddress);
+        
         address dsaAddress = instapool.getAccountIdDetails(_id).account;
+
+        require(token.balanceOf(dsaAddress) >= _amt, "INSUFFICIENT TOKEN BALANCE");
 
         string[] memory targets = new string[](1);
         targets[0] = "BASIC-A";
@@ -146,10 +169,13 @@ contract DsaWrapper {
         IDSA(dsaAddress).cast(targets, data, address(0));
     }
 
-    // add authority
-    function addAuthority(uint256 _id, address _authority) external {
-        address dsaAddress = instapool.getAccountIdDetails(_id).account;
+    function addAuthority(uint256 _id, address _authority)
+        external
+        onlyAuthority(_id, msg.sender)
+    {
+        require(_authority != address(0), "INVALID ADDRESS");
 
+        address dsaAddress = instapool.getAccountIdDetails(_id).account;
         string[] memory target = new string[](1);
         target[0] = "AUTHORITY-A";
 
@@ -160,8 +186,12 @@ contract DsaWrapper {
         IDSA(dsaAddress).cast(target, data, address(0));
     }
 
-    // remove authority
-    function removeAuthority(uint256 _id, address _authority) external {
+    function removeAuthority(uint256 _id, address _authority)
+        external
+        onlyAuthority(_id, msg.sender)
+    {
+        require(_authority != address(0), "INVALID ADDRESS");
+
         address dsaAddress = instapool.getAccountIdDetails(_id).account;
 
         string[] memory target = new string[](1);

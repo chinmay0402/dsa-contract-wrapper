@@ -7,7 +7,7 @@ const dsaContractAbi = require("./ABIs/dsaContractAbi.js");
 const daiAbi = require("./ABIs/daiAbi.js");
 
 describe("DSA Wrapper Contract", function () {
-  let owner, addr1;
+  let owner, addr1, addr2;
   let dsaWrapper, dai;
   let dsa, dsaId, dsaAddress;
   const address = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
@@ -29,13 +29,13 @@ describe("DSA Wrapper Contract", function () {
     const accounts = await dsa.getAccounts(address);
     console.log(accounts)
     dsaAddress = accounts[0].address;
-    
+
     dsaContract = new ethers.Contract(dsaAddress, dsaContractAbi, ethers.provider);
 
     dsaId = accounts[0].id;
 
     const dsaWrapperFactory = await ethers.getContractFactory("DsaWrapper");
-    [owner, addr1] = await ethers.getSigners();
+    [owner, addr1, addr2] = await ethers.getSigners();
     dsaWrapper = await dsaWrapperFactory.deploy();
 
     await dsa.setInstance(dsaId);
@@ -82,7 +82,10 @@ describe("DSA Wrapper Contract", function () {
         .to.changeEtherBalances([owner, dsaContract], [parseEther('0.6'), parseEther('-0.6')]);
     });
 
-    // add test for withdraw failure
+    it('Should fail on trying to borrow more Ether than balance', async () => {
+      await expect(dsaWrapper.withdrawEther(dsaId, parseEther('0.5')))
+        .to.be.revertedWith("INSUFFICIENT FUNDS");
+    });
 
     it('Should withdraw Ether from DSA and update balances (2)', async () => {
       await expect(await dsaWrapper.withdrawEther(dsaId, parseEther('0.4')))
@@ -102,24 +105,32 @@ describe("DSA Wrapper Contract", function () {
       await expect(() => dsaWrapper.withdrawErc20(dsaId, parseUnits('0.4', 18), daiAddress))
         .to.changeTokenBalances(dai, [owner, dsaContract], [parseUnits('0.4', 18), parseUnits('-0.4', 18)]);
     });
+    it('Should fail on trying to withdraw more than token balance', async () => {
+      await expect(dsaWrapper.withdrawErc20(dsaId, parseUnits('0.9', 18), daiAddress))
+        .to.be.revertedWith("INSUFFICIENT TOKEN BALANCE");
+    });
   });
 
   describe('Authority', async () => {
     it('Should add authority', async () => {
       await dsaWrapper.addAuthority(dsaId, addr1.address);
-
       await expect(await dsaWrapper.getAuthority(dsaId)).to.have.all.members([owner.address, dsaWrapper.address, addr1.address]);
     });
 
     it('Should remove authority', async () => {
       // to confirm if addr1 is still auth
       await expect(await dsaWrapper.getAuthority(dsaId)).to.have.all.members([owner.address, dsaWrapper.address, addr1.address]);
-      
+
       // remove addr1 from auth
       await dsaWrapper.removeAuthority(dsaId, addr1.address);
 
       // check if remove was successful
       await expect(await dsaWrapper.getAuthority(dsaId)).to.have.all.members([owner.address, dsaWrapper.address]);
     });
+
+    it('Should fail on attempting to modify authority with non-authority account', async () => {
+      await expect(dsaWrapper.connect(addr2).addAuthority(dsaId, addr1.address))
+        .to.be.revertedWith("PERMISSION DENIED: NO AUTHORITY");
+    })
   });
 });
