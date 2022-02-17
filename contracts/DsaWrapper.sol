@@ -1,9 +1,14 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
+/**
+ * @title DsaWrapper
+ * @dev Contract to wrap a DSA contract deployed by the user, allows user deposit, withdraw ETH/ERC20 tokens and modify authority
+ */
+
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "./interfaces/Authority.sol";
+import "./interfaces/InstapoolV2.sol";
 import "./interfaces/IDSA.sol";
 
 contract DsaWrapper {
@@ -16,14 +21,11 @@ contract DsaWrapper {
         0x621AD080ad3B839e7b19e040C77F05213AB71524;
     InstapoolV2 instapool = InstapoolV2(instapoolV2ContractAddress); // instantiate instapool contract
 
-    constructor() {
-        owner = msg.sender;
-    }
-
-    function getOwner() external view returns (address) {
-        return owner;
-    }
-
+    /**
+     * @dev returns all authorities of the DSA account having id _id
+     * @param _id the id of the DSA account
+     * @return array containing all authorities of the account
+     */
     function getAuthority(uint256 _id) public view returns (address[] memory) {
         // get dsa-address from id
         address dsaAddress = instapool.getAccountIdDetails(_id).account;
@@ -35,6 +37,11 @@ contract DsaWrapper {
         return accountAuthorities;
     }
 
+    /**
+     * @dev modifier to check if the user trying to perform operation on the DSA is authority
+     * @param _id id of DSA account
+     * @param _user address of person trying to perform operaion
+     */
     modifier onlyAuthority(uint256 _id, address _user) {
         address[] memory authorities = getAuthority(_id);
 
@@ -49,6 +56,10 @@ contract DsaWrapper {
         _;
     }
 
+    /**
+     * @dev deposits ETH sent to contract to DSA account given by _id
+     * @param _id id of DSA account
+     */
     function depositEther(uint256 _id)
         external
         payable
@@ -78,6 +89,11 @@ contract DsaWrapper {
         IDSA(dsaAddress).cast{value: msg.value}(targets, data, address(0));
     }
 
+    /**
+     * @dev withdraws ETH from DSA account given by _id
+     * @param _id id of DSA account
+     * @param _amt amount of ETH to withdraw
+     */
     function withdrawEther(uint256 _id, uint256 _amt)
         external
         onlyAuthority(_id, msg.sender)
@@ -107,6 +123,12 @@ contract DsaWrapper {
         IDSA(dsaAddress).cast(targets, data, address(0));
     }
 
+    /**
+     * @dev deposits ERC20 token to DSA account given by _id
+     * @param _id id of DSA account
+     * @param _amt amount of tokens to be deposited
+     * @param _tokenAddress address of token to be deposited
+     */
     function depositErc20(
         uint256 _id,
         uint256 _amt,
@@ -138,6 +160,12 @@ contract DsaWrapper {
         IDSA(dsaAddress).cast(targets, data, address(0));
     }
 
+    /**
+     * @dev withdraws ERC20 token from DSA account given by _id
+     * @param _id id of DSA account
+     * @param _amt amount of tokens to withdraw
+     * @param _tokenAddress contract address of ERC20 token
+     */
     function withdrawErc20(
         uint256 _id,
         uint256 _amt,
@@ -169,6 +197,11 @@ contract DsaWrapper {
         IDSA(dsaAddress).cast(targets, data, address(0));
     }
 
+    /**
+     * @dev adds the passed address to the list of authority accounts of the DSA
+     * @param _id id of the DSA account
+     * @param _authority address of account to be added as authority to DSA
+     */
     function addAuthority(uint256 _id, address _authority)
         external
         onlyAuthority(_id, msg.sender)
@@ -186,6 +219,11 @@ contract DsaWrapper {
         IDSA(dsaAddress).cast(target, data, address(0));
     }
 
+    /**
+     * @dev removes the passed address from the list of authority accounts of the DSA
+     * @param _id id of the DSA account
+     * @param _authority address of account to be removed from authorities to DSA
+     */
     function removeAuthority(uint256 _id, address _authority)
         external
         onlyAuthority(_id, msg.sender)

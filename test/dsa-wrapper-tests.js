@@ -55,13 +55,7 @@ describe("DSA Wrapper Contract", function () {
     await dai.connect(owner).approve(dsaWrapper.address, parseUnits('1', 18));
   });
 
-  describe('Deployment', async () => {
-    it('Sets the correct owner', async () => {
-      await expect(await dsaWrapper.getOwner()).to.equal(owner.address);
-    });
-  });
-
-  describe('Authority', async () => {
+  describe('Get Authority', async () => {
     it('should return correct account authority', async () => {
       await expect(await dsaWrapper.getAuthority(dsaId)).to.have.all.members([owner.address, dsaWrapper.address]);
     });
@@ -111,7 +105,7 @@ describe("DSA Wrapper Contract", function () {
     });
   });
 
-  describe('Authority', async () => {
+  describe('Modify Authority', async () => {
     it('Should add authority', async () => {
       await dsaWrapper.addAuthority(dsaId, addr1.address);
       await expect(await dsaWrapper.getAuthority(dsaId)).to.have.all.members([owner.address, dsaWrapper.address, addr1.address]);
